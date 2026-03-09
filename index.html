@@ -423,6 +423,63 @@
     .analyze-btn:disabled { transform: none; }
   }
 
+  .examples-intro {
+    font-size: 17px;
+    font-style: italic;
+    color: rgba(245, 237, 224, 0.6);
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 300;
+    line-height: 1.7;
+  }
+
+  .examples-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+    margin-bottom: 48px;
+  }
+
+  .example-card {
+    background: rgba(26, 15, 10, 0.5);
+    border: 1px solid rgba(184,147,42,0.1);
+    border-left: 3px solid rgba(184,147,42,0.5);
+    padding: 28px 32px;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .example-card:hover {
+    border-left-color: var(--gold);
+    background: rgba(184,147,42,0.04);
+  }
+
+  .example-domain {
+    font-family: 'Cinzel', serif;
+    font-size: 9px;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    opacity: 0.6;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .example-chain {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--gold-light);
+    font-style: italic;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+
+  .example-story {
+    font-size: 16px;
+    line-height: 1.8;
+    color: rgba(245, 237, 224, 0.75);
+    font-weight: 300;
+  }
+
   @keyframes fadeDown {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -482,9 +539,15 @@
       <p class="synthesis-title">Синтез — Причинно-наслідковий ланцюг</p>
       <div class="synthesis-text" id="synthesisText"></div>
     </div>
+
+    <div class="examples-section" id="examplesSection" style="display:none">
+      <p class="cases-title">∗ &nbsp; Приклади з Життя &nbsp; ∗</p>
+      <p class="examples-intro" id="examplesIntro"></p>
+      <div class="examples-grid" id="examplesGrid"></div>
+    </div>
   </div>
 
-  <p class="footer-note">Архетипічна Когнітивістика · Єгор Алпатов</p>
+  <p class="footer-note">Архетипічна Когнітивістика · Єгор Кучер</p>
 </div>
 
 <script>
@@ -586,7 +649,25 @@ ${letterList}
       return `{"letter": "${l}", "case_name": "${c.name}", "case_role": "${c.role}", "form": "${arch.form}", "image": "${arch.image}", "archetype": "${arch.meaning}", "explanation": "розгорнуте пояснення (3-5 речень) причинно-наслідкового зв'язку цієї букви у відмінку з попередньою"}`;
     }).join(',\n    ')}
   ],
-  "synthesis": "фінальний синтез у форматі: [Архетип1] ${letters.length > 1 ? 'народжує' : ''} [Архетип2] → дає [Архетип3] → творить [Архетип4]... — одне розгорнуте речення-ланцюг, що проходить через ВСІ букви по порядку, показуючи причинно-наслідковий зв'язок між ними"
+  "synthesis": "фінальний синтез у форматі: [Архетип1] народжує [Архетип2] → дає [Архетип3] → творить [Архетип4]... — одне розгорнуте речення-ланцюг крізь ВСІ букви по порядку",
+  "examples_intro": "одне речення: як причинно-наслідковий ланцюг цього слова проявляється в реальному житті людини",
+  "examples": [
+    {
+      "domain": "назва сфери життя (напр. СТОСУНКИ, ТВОРЧІСТЬ, КРИЗА, РОБОТА, ДУХОВНИЙ ШЛЯХ)",
+      "chain": "скорочений ланцюг архетипів конкретно для цього прикладу (через →)",
+      "story": "конкретна життєва ситуація (4-6 речень) де чітко видно як кожна ланка причинно-наслідкового ланцюга проявляється у діях, подіях, внутрішніх станах людини. Без абстракцій — реальна людська історія."
+    },
+    {
+      "domain": "інша сфера життя",
+      "chain": "ланцюг архетипів для цього прикладу",
+      "story": "інша конкретна ситуація з іншої сфери — показує універсальність ланцюга"
+    },
+    {
+      "domain": "третя сфера",
+      "chain": "ланцюг архетипів",
+      "story": "третя ситуація — ще одна грань прояву того самого архетипного ланцюга в житті"
+    }
+  ]
 }`;
 
   try {
@@ -597,12 +678,16 @@ ${letterList}
     });
 
     const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    const clean = data.text.replace(/```json|```/g, '').trim();
+    if (data.error) throw new Error('Сервер: ' + data.error);
+    const rawText = data.text || '';
+    console.log('RAW from server:', rawText.slice(0, 200));
+    const clean = rawText.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
     renderResults(word, letters, parsed);
   } catch (e) {
-    document.getElementById('errorMsg').classList.add('visible');
+    const errEl = document.getElementById('errorMsg');
+    errEl.textContent = 'Помилка: ' + e.message;
+    errEl.classList.add('visible');
     console.error(e);
   } finally {
     document.getElementById('loading').classList.remove('visible');
@@ -647,6 +732,29 @@ function renderResults(word, letters, data) {
   });
 
   document.getElementById('synthesisText').textContent = data.synthesis || '';
+
+  // Examples section
+  const examplesSection = document.getElementById('examplesSection');
+  const examplesGrid = document.getElementById('examplesGrid');
+  document.getElementById('examplesIntro').textContent = data.examples_intro || '';
+  examplesGrid.innerHTML = '';
+
+  if (data.examples && data.examples.length > 0) {
+    data.examples.forEach(ex => {
+      const card = document.createElement('div');
+      card.className = 'example-card';
+      card.innerHTML = `
+        <div class="example-domain">${ex.domain || ''}</div>
+        <div class="example-chain">${ex.chain || ''}</div>
+        <div class="example-story">${ex.story || ''}</div>
+      `;
+      examplesGrid.appendChild(card);
+    });
+    examplesSection.style.display = 'block';
+  } else {
+    examplesSection.style.display = 'none';
+  }
+
   document.getElementById('results').classList.add('visible');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
