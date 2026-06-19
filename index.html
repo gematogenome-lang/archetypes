@@ -736,16 +736,47 @@ ${letterList}
     const rawText = data.text || '';
     console.log('RAW from server:', rawText.slice(0, 200));
     const clean = rawText.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const parsed = safeParseJSON(clean);
+    if (!parsed) {
+      throw new Error('Розбір не завершився повністю. Спробуйте ще раз.');
+    }
     renderResults(word, letters, parsed);
   } catch (e) {
     const errEl = document.getElementById('errorMsg');
-    errEl.textContent = 'Помилка: ' + e.message;
+    errEl.textContent = e.message;
     errEl.classList.add('visible');
     console.error(e);
   } finally {
     document.getElementById('loading').classList.remove('visible');
     btn.disabled = false;
+  }
+}
+
+// Стійкий парсинг: пробуємо як є, потім намагаємось «закрити» обірваний JSON
+function safeParseJSON(text) {
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    // спроба відновити обірваний JSON
+    let s = text;
+    // прибрати незавершений хвіст після останньої повної коми/дужки
+    const lastBrace = Math.max(s.lastIndexOf('}'), s.lastIndexOf(']'));
+    if (lastBrace > 0) {
+      let candidate = s.slice(0, lastBrace + 1);
+      // дозакрити незбалансовані дужки
+      const openCurly = (candidate.match(/{/g) || []).length;
+      const closeCurly = (candidate.match(/}/g) || []).length;
+      const openSq = (candidate.match(/\[/g) || []).length;
+      const closeSq = (candidate.match(/\]/g) || []).length;
+      candidate += ']'.repeat(Math.max(0, openSq - closeSq));
+      candidate += '}'.repeat(Math.max(0, openCurly - closeCurly));
+      try {
+        return JSON.parse(candidate);
+      } catch (e2) {
+        return null;
+      }
+    }
+    return null;
   }
 }
 
