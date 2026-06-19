@@ -204,10 +204,33 @@
   .loading.visible { display: block; }
 
   .loading-symbol {
-    font-size: 48px;
-    margin-bottom: 16px;
-    display: block;
-    animation: spin 4s linear infinite;
+    position: relative;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .loading-moon {
+    font-size: 44px;
+    line-height: 1;
+    color: var(--gold);
+    animation: pulse 2.4s ease infinite;
+  }
+  .loading-ring {
+    position: absolute;
+    top: 0; left: 0;
+    width: 96px;
+    height: 96px;
+    animation: spin 2.6s linear infinite;
+  }
+  .loading-ring circle {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    opacity: 0.85;
   }
 
   .loading-text {
@@ -216,7 +239,7 @@
     letter-spacing: 0.5em;
     color: var(--gold);
     opacity: 0.7;
-    animation: pulse 2s ease infinite;
+    transition: opacity 0.4s ease;
   }
 
   .results {
@@ -557,8 +580,13 @@
   </div>
 
   <div class="loading" id="loading">
-    <span class="loading-symbol">☽</span>
-    <p class="loading-text">Розкриваємо архетип...</p>
+    <div class="loading-symbol">
+      <svg class="loading-ring" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="44" stroke-dasharray="207 69"></circle>
+      </svg>
+      <span class="loading-moon">☽</span>
+    </div>
+    <p class="loading-text" id="loadingText">Розкриваємо архетип...</p>
   </div>
 
   <div class="error-msg" id="errorMsg">Не вдалося отримати аналіз. Спробуйте ще раз.</div>
@@ -663,6 +691,7 @@ async function analyze() {
   const btn = document.getElementById('analyzeBtn');
   btn.disabled = true;
   document.getElementById('loading').classList.add('visible');
+  startLoadingStages();
   document.getElementById('results').classList.remove('visible');
   document.getElementById('errorMsg').classList.remove('visible');
 
@@ -747,8 +776,39 @@ ${letterList}
     errEl.classList.add('visible');
     console.error(e);
   } finally {
+    stopLoadingStages();
     document.getElementById('loading').classList.remove('visible');
     btn.disabled = false;
+  }
+}
+
+// Стадії розбору — змінювані підписи під час очікування
+let _loadingStageTimer = null;
+function startLoadingStages() {
+  const stages = [
+    'Розкриваємо форми букв...',
+    'Зв\u2019язуємо відмінки...',
+    'Будуємо причинний ланцюг...',
+    'Шукаємо історичний слід...',
+    'Завершуємо синтез...'
+  ];
+  const el = document.getElementById('loadingText');
+  let i = 0;
+  el.textContent = stages[0];
+  el.style.opacity = '0.7';
+  _loadingStageTimer = setInterval(() => {
+    i = Math.min(i + 1, stages.length - 1);
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.textContent = stages[i];
+      el.style.opacity = '0.7';
+    }, 400);
+  }, 2600);
+}
+function stopLoadingStages() {
+  if (_loadingStageTimer) {
+    clearInterval(_loadingStageTimer);
+    _loadingStageTimer = null;
   }
 }
 
