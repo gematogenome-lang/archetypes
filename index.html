@@ -390,6 +390,45 @@
     font-style: italic;
   }
 
+  .figure-section {
+    border: 1px solid rgba(184,147,42,0.35);
+    background: rgba(184,147,42,0.05);
+    padding: 36px 40px;
+    margin-bottom: 40px;
+    text-align: center;
+  }
+  .figure-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.5em;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+  .figure-name {
+    font-family: 'Cinzel', serif;
+    font-size: 26px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  .figure-meta {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: rgba(245, 237, 224, 0.55);
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .figure-resonance {
+    font-size: 17px;
+    line-height: 1.85;
+    color: rgba(245, 237, 224, 0.85);
+    font-weight: 300;
+    font-style: italic;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
   .error-msg {
     display: none;
     text-align: center;
@@ -540,6 +579,13 @@
       <div class="synthesis-text" id="synthesisText"></div>
     </div>
 
+    <div class="figure-section" id="figureSection" style="display:none">
+      <p class="figure-label">Печать імені — історичне підтвердження</p>
+      <p class="figure-name" id="figureName"></p>
+      <p class="figure-meta" id="figureMeta"></p>
+      <p class="figure-resonance" id="figureResonance"></p>
+    </div>
+
     <div class="examples-section" id="examplesSection" style="display:none">
       <p class="cases-title">∗ &nbsp; Приклади з Життя &nbsp; ∗</p>
       <p class="examples-intro" id="examplesIntro"></p>
@@ -638,6 +684,8 @@ ${letterList}
 
 Твоє завдання — для кожної букви написати розгорнуте пояснення (3-5 речень) того, як архетипне значення цієї букви ПРОЯВЛЯЄТЬСя через її відмінок у причинно-наслідковому зв'язку з попередньою буквою. Перша буква — вихідна точка. Кожна наступна буква причинно випливає з попередньої.
 
+ПІСЛЯ розбору підбери ОДНУ історично безспірну, нейтрально-шановану особистість з цим іменем, чия біографія ілюструє виведену причинно-наслідкову структуру. Вимоги до особистості: загальновизнана й поважана майже всіма, без політичних чи ідеологічних розколів (надавай перевагу науковцям, митцям, гуманістам, першовідкривачам; уникай політиків, військових діячів та суперечливих постатей). Спершу виведи структуру слова, і лише потім шукай особистість, чия доля РЕАЛЬНО резонує з цією структурою — особистість підтверджує розбір, а не диктує його. Якщо переконливого збігу немає — НЕ підставляй нікого (залиш поля порожніми рядками "").
+
 Відповідай ТІЛЬКИ у форматі JSON (без markdown, без \`\`\`):
 {
   "archetype_name": "поетична назва загального архетипу слова (3-6 слів)",
@@ -650,6 +698,12 @@ ${letterList}
     }).join(',\n    ')}
   ],
   "synthesis": "фінальний синтез у форматі: [Архетип1] народжує [Архетип2] → дає [Архетип3] → творить [Архетип4]... — одне розгорнуте речення-ланцюг крізь ВСІ букви по порядку",
+  "historical_figure": {
+    "name": "ім'я історично безспірної, нейтрально-шанованої особистості з цим іменем — або \"\" якщо переконливого збігу немає",
+    "lifespan": "роки життя (напр. 1867–1934) — або \"\"",
+    "field": "сфера діяльності (напр. наука, мистецтво) — або \"\"",
+    "resonance": "2-4 речення: як саме біографія цієї особистості ілюструє виведену причинно-наслідкову структуру імені — або \"\""
+  },
   "examples_intro": "одне речення: як причинно-наслідковий ланцюг цього слова проявляється в реальному житті людини",
   "examples": [
     {
@@ -732,6 +786,19 @@ function renderResults(word, letters, data) {
   });
 
   document.getElementById('synthesisText').textContent = data.synthesis || '';
+
+  // Historical figure section — показуємо тільки якщо є переконливий збіг
+  const figureSection = document.getElementById('figureSection');
+  const fig = data.historical_figure;
+  if (fig && fig.name && fig.name.trim() && fig.resonance && fig.resonance.trim()) {
+    document.getElementById('figureName').textContent = fig.name;
+    const meta = [fig.lifespan, fig.field].filter(s => s && s.trim()).join(' · ');
+    document.getElementById('figureMeta').textContent = meta;
+    document.getElementById('figureResonance').textContent = fig.resonance;
+    figureSection.style.display = 'block';
+  } else {
+    figureSection.style.display = 'none';
+  }
 
   // Examples section
   const examplesSection = document.getElementById('examplesSection');
